@@ -22,8 +22,13 @@
  *  dS_i/du_i = -invK * mu  is the exact Jacobian, so the sink is treated
  *  fully implicitly: the membrane cannot be "blown through" numerically.
  *
- *  K_air   = 1e-13 m2  -> highly breathable (air passes)
- *  K_water = 1e-16 m2  -> effectively impermeable (water is held back)
+ *  IDEAL CASE (user request):
+ *  K_air   = 1e-13 m2  (INVK_AIR = 1e13)  -> breathable, finite resistance
+ *  K_water = 1e-17 m2  (INVK_WATER = 1e17) -> water is completely held back
+ *
+ *  With the linear blend on inverse permeability the air branch contributes
+ *  nothing, so invK = alpha * INVK_WATER: resistance switches on exactly in
+ *  proportion to how much water the cell contains.
  *
  *  The viscosity mu is the mixture laminar viscosity C_MU_L of the cell,
  *  which in a VOF cell is the volume-fraction weighted blend of the phase
@@ -37,8 +42,8 @@
 
 #include "udf.h"
 
-#define INVK_AIR    1.0e13    /* 1/m2,  K_air   = 1e-13 m2 */
-#define INVK_WATER  1.0e16    /* 1/m2,  K_water = 1e-16 m2 */
+#define INVK_AIR    1.0e13    /* K = 1e-13 m2 -> air passes at ~0.44 mm/s @ 40 Pa */
+#define INVK_WATER  1.0e15    /* K = 1e-15 m2 -> u = 4.4e-8 m/s at 40 Pa (still impermeable) */
 
 /* ---------------------------------------------------------------------
  *  Shared inline evaluation of  -invK * mu  for a cell of the mixture
@@ -87,3 +92,7 @@ DEFINE_SOURCE(membrane_z, c, t, dS, eqn)
     dS[eqn] = -k;
     return -k * C_W(c, t);
 }
+
+
+
+
